@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Job Board{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Hero Section -->
+        <div class="bg-primary text-white rounded-3 p-5 mb-4 text-center">
+            <h1 class="display-5 fw-bold"><i class="fas fa-briefcase me-3"></i>Find Your Dream Job</h1>
+            <p class="lead">Discover thousands of job opportunities from top companies</p>
+        </div>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="search-form">
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            {{ form.search }}
+        </div>
+        <div class="col-md-3">
+            {{ form.location }}
+        </div>
+        <div class="col-md-2">
+            {{ form.job_type }}
+        </div>
+        <div class="col-md-2">
+            {{ form.salary_min }}
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Results Summary -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Available Jobs</h3>
+    <span class="badge bg-primary fs-6">{{ total_jobs }} job{{ total_jobs|pluralize }} found</span>
+</div>
+
+<!-- Job Listings -->
+<div class="row">
+    {% for job in page_obj %}
+        <div class="col-12 mb-3">
+            <div class="card job-card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="card-title">
+                                <a href="{% url 'job_detail' job.pk %}" class="job-title">{{ job.title }}</a>
+                            </h5>
+                            <h6 class="card-subtitle company-name">{{ job.company_name }}</h6>
+                            <p class="card-text text-muted mt-2">{{ job.description|truncatewords:25 }}</p>
+                            
+                            <div class="job-meta mt-3">
+                                <span class="me-3">
+                                    <i class="fas fa-map-marker-alt"></i>{{ job.location }}
+                                </span>
+                                <span class="me-3">
+                                    <i class="fas fa-clock"></i>{{ job.get_job_type_display }}
+                                </span>
+                                <span class="me-3">
+                                    <i class="fas fa-calendar-alt"></i>{{ job.created_at|date:"M d, Y" }}
+                                </span>
+                                {% if job.deadline %}
+                                    <span class="me-3">
+                                        <i class="fas fa-hourglass-end"></i>Deadline: {{ job.deadline|date:"M d, Y" }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            {% if job.salary_min or job.salary_max %}
+                                <div class="salary-range mb-2">
+                                    {{ job.get_salary_range }}
+                                </div>
+                            {% endif %}
+                            
+                            <span class="badge bg-info job-type-badge mb-2">
+                                {{ job.get_job_type_display }}
+                            </span>
+                            
+                            <div class="mt-2">
+                                <a href="{% url 'job_detail' job.pk %}" class="btn btn-outline-primary btn-sm">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4>No jobs found</h4>
+                <p class="text-muted">Try adjusting your search criteria or check back later for new opportunities.</p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+    <nav aria-label="Job listings pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.job_type %}&job_type={{ request.GET.job_type }}{% endif %}{% if request.GET.salary_min %}&salary_min={{ request.GET.salary_min }}{% endif %}">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.job_type %}&job_type={{ request.GET.job_type }}{% endif %}{% if request.GET.salary_min %}&salary_min={{ request.GET.salary_min }}{% endif %}">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.job_type %}&job_type={{ request.GET.job_type }}{% endif %}{% if request.GET.salary_min %}&salary_min={{ request.GET.salary_min }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.job_type %}&job_type={{ request.GET.job_type }}{% endif %}{% if request.GET.salary_min %}&salary_min={{ request.GET.salary_min }}{% endif %}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.location %}&location={{ request.GET.location }}{% endif %}{% if request.GET.job_type %}&job_type={{ request.GET.job_type }}{% endif %}{% if request.GET.salary_min %}&salary_min={{ request.GET.salary_min }}{% endif %}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}
