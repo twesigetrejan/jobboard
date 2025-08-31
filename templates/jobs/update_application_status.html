@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+
+{% block title %}Update Application Status - {{ application.applicant.jobseekerprofile.full_name|default:application.applicant.username }} - Job Board{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-edit text-primary me-2"></i>
+                        <h4 class="mb-0">Update Application Status</h4>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Application Summary -->
+                    <div class="alert alert-info mb-4">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5 class="alert-heading">
+                                    <i class="fas fa-user me-2"></i>
+                                    {{ application.applicant.jobseekerprofile.full_name|default:application.applicant.username }}
+                                </h5>
+                                <p class="mb-2">
+                                    <strong>Applied for:</strong> {{ application.job.title }} at {{ application.job.company_name }}
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Applied on:</strong> {{ application.applied_at|date:"F d, Y \a\t g:i A" }}
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Current Status:</strong> 
+                                    <span class="application-status status-{{ application.status }}">
+                                        {{ application.get_status_display }}
+                                    </span>
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <a href="{% url 'application_detail' application.pk %}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>View Full Application
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Update Form -->
+                    <form method="post" id="statusUpdateForm">
+                        {% csrf_token %}
+                        
+                        <!-- Status Selection -->
+                        <div class="mb-4">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">
+                                <strong>New Status</strong>
+                            </label>
+                            <div class="status-options">
+                                {% for choice in form.status.field.choices %}
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" 
+                                               type="radio" 
+                                               name="status" 
+                                               id="status_{{ choice.0 }}"
+                                               value="{{ choice.0 }}"
+                                               {% if form.status.value == choice.0 %}checked{% endif %}
+                                               onchange="updateStatusDescription('{{ choice.0 }}')">
+                                        <label class="form-check-label d-flex align-items-center" for="status_{{ choice.0 }}">
+                                            <span class="status-icon me-2">
+                                                {% if choice.0 == 'pending' %}
+                                                    <i class="fas fa-hourglass-half text-warning"></i>
+                                                {% elif choice.0 == 'reviewed' %}
+                                                    <i class="fas fa-eye text-info"></i>
+                                                {% elif choice.0 == 'accepted' %}
+                                                    <i class="fas fa-check-circle text-success"></i>
+                                                {% elif choice.0 == 'rejected' %}
+                                                    <i class="fas fa-times-circle text-danger"></i>
+                                                {% endif %}
+                                            </span>
+                                            <strong>{{ choice.1 }}</strong>
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <!-- Status Descriptions -->
+                            <div class="status-descriptions mt-3">
+                                <div id="desc_pending" class="status-description" style="display: none;">
+                                    <div class="alert alert-warning">
+                                        <strong>Pending:</strong> Application is waiting for initial review. This is the default status for new applications.
+                                    </div>
+                                </div>
+                                <div id="desc_reviewed" class="status-description" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <strong>Reviewed:</strong> Application has been reviewed and is under consideration. The candidate will be notified that their application is being processed.
+                                    </div>
+                                </div>
+                                <div id="desc_accepted" class="status-description" style="display: none;">
+                                    <div class="alert alert-success">
+                                        <strong>Accepted:</strong> Application has been accepted and the candidate will be contacted for next steps. This typically means the candidate will be invited for an interview or offered the position.
+                                    </div>
+                                </div>
+                                <div id="desc_rejected" class="status-description" style="display: none;">
+                                    <div class="alert alert-danger">
+                                        <strong>Rejected:</strong> Application has been declined. The candidate will be notified that they were not selected for this position.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Internal Notes -->
+                        <div class="mb-4">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                <strong>Internal Notes</strong>
+                                <small class="text-muted">(Optional - Only visible to you)</small>
+                            </label>
+                            {{ form.notes }}
+                            <div class="form-text">
+                                Add any internal notes about this application. These notes are private and will not be shared with the applicant.
+                            </div>
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.notes.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Notification Settings -->
+                        <div class="mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-bell me-2"></i>Notification Settings</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               id="notify_applicant" 
+                                               name="notify_applicant" 
+                                               checked>
+                                        <label class="form-check-label" for="notify_applicant">
+                                            Notify applicant via email about status change
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">
+                                        The applicant will receive an email notification about the status update.
+                                        Uncheck this if you want to update the status without notifying the applicant yet.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="submit" class="btn btn-primary btn-lg w-100" id="updateStatusBtn">
+                                    <i class="fas fa-save me-2"></i>Update Status
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <a href="{% url 'application_detail' application.pk %}" class="btn btn-secondary btn-lg w-100">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{% url 'job_applications' application.job.pk %}" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                                <i class="fas fa-list me-1"></i>All Applications
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'job_detail' application.job.pk %}" class="btn btn-outline-info btn-sm w-100 mb-2">
+                                <i class="fas fa-briefcase me-1"></i>Job Details
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="mailto:{{ application.applicant.email }}" class="btn btn-outline-success btn-sm w-100 mb-2">
+                                <i class="fas fa-envelope me-1"></i>Email Applicant
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'employer_dashboard' %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function updateStatusDescription(status) {
+    // Hide all descriptions
+    document.querySelectorAll('.status-description').forEach(desc => {
+        desc.style.display = 'none';
+    });
+    
+    // Show selected description
+    const selectedDesc = document.getElementById(`desc_${status}`);
+    if (selectedDesc) {
+        selectedDesc.style.display = 'block';
+    }
+
+    // Update button text based on status
+    const updateBtn = document.getElementById('updateStatusBtn');
+    const statusText = {
+        'pending': 'Mark as Pending',
+        'reviewed': 'Mark as Reviewed', 
+        'accepted': 'Accept Application',
+        'rejected': 'Reject Application'
+    };
+    
+    updateBtn.innerHTML = `<i class="fas fa-save me-2"></i>${statusText[status] || 'Update Status'}`;
+    
+    // Change button color based on status
+    updateBtn.className = 'btn btn-lg w-100 ';
+    switch(status) {
+        case 'accepted':
+            updateBtn.className += 'btn-success';
+            break;
+        case 'rejected':
+            updateBtn.className += 'btn-danger';
+            break;
+        case 'reviewed':
+            updateBtn.className += 'btn-info';
+            break;
+        default:
+            updateBtn.className += 'btn-primary';
+    }
+}
+
+// Initialize description display on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const checkedStatus = document.querySelector('input[name="status"]:checked');
+    if (checkedStatus) {
+        updateStatusDescription(checkedStatus.value);
+    }
+    
+    // Add confirmation for rejection
+    document.getElementById('statusUpdateForm').addEventListener('submit', function(e) {
+        const selectedStatus = document.querySelector('input[name="status"]:checked');
+        if (selectedStatus && selectedStatus.value === 'rejected') {
+            if (!confirm('Are you sure you want to reject this application? This action will notify the applicant that they were not selected.')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.status-options .form-check {
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.status-options .form-check:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff;
+}
+
+.status-options .form-check-input:checked + .form-check-label {
+    color: #007bff;
+    font-weight: 600;
+}
+
+.status-description {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+{% endblock %}

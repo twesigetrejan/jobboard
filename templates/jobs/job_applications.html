@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}Applications for {{ job.title }} - Job Board{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><i class="fas fa-users me-2"></i>Job Applications</h2>
+                <p class="text-muted mb-0">Managing applications for: <strong>{{ job.title }}</strong> at <strong>{{ job.company_name }}</strong></p>
+            </div>
+            <div>
+                <a href="{% url 'job_detail' job.pk %}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-eye me-2"></i>View Job
+                </a>
+                <a href="{% url 'edit_job' job.pk %}" class="btn btn-warning">
+                    <i class="fas fa-edit me-2"></i>Edit Job
+                </a>
+            </div>
+        </div>
+
+        <!-- Job Summary Card -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5>{{ job.title }}</h5>
+                        <p class="text-muted mb-2">{{ job.description|truncatewords:30 }}</p>
+                        <div class="job-meta">
+                            <span class="me-3">
+                                <i class="fas fa-map-marker-alt"></i>{{ job.location }}
+                            </span>
+                            <span class="me-3">
+                                <i class="fas fa-clock"></i>{{ job.get_job_type_display }}
+                            </span>
+                            <span class="me-3">
+                                <i class="fas fa-calendar-alt"></i>Posted {{ job.created_at|date:"M d, Y" }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        {% if job.salary_min or job.salary_max %}
+                            <div class="salary-range mb-2">{{ job.get_salary_range }}</div>
+                        {% endif %}
+                        <div>
+                            {% if job.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications Stats -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card bg-primary text-white">
+                    <div class="stat-number">{{ page_obj.paginator.count }}</div>
+                    <div>Total Applications</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-warning text-white">
+                    <div class="stat-number">
+                        {% with pending_count=page_obj.object_list|length %}
+                            {{ pending_count|default:0 }}
+                        {% endwith %}
+                    </div>
+                    <div>Pending Review</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-success text-white">
+                    <div class="stat-number">0</div>
+                    <div>Accepted</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card bg-danger text-white">
+                    <div class="stat-number">0</div>
+                    <div>Rejected</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications List -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Applications</h5>
+                <div class="btn-group" role="group">
+                    <input type="radio" class="btn-check" name="statusFilter" id="all" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary btn-sm" for="all">All</label>
+
+                    <input type="radio" class="btn-check" name="statusFilter" id="pending" autocomplete="off">
+                    <label class="btn btn-outline-warning btn-sm" for="pending">Pending</label>
+
+                    <input type="radio" class="btn-check" name="statusFilter" id="reviewed" autocomplete="off">
+                    <label class="btn btn-outline-info btn-sm" for="reviewed">Reviewed</label>
+
+                    <input type="radio" class="btn-check" name="statusFilter" id="accepted" autocomplete="off">
+                    <label class="btn btn-outline-success btn-sm" for="accepted">Accepted</label>
+
+                    <input type="radio" class="btn-check" name="statusFilter" id="rejected" autocomplete="off">
+                    <label class="btn btn-outline-danger btn-sm" for="rejected">Rejected</label>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if page_obj %}
+                    {% for application in page_obj %}
+                        <div class="border rounded p-3 mb-3 application-item" data-status="{{ application.status }}">
+                            <div class="row">
+                                <div class="col-md-2 text-center">
+                                    {% if application.applicant.jobseekerprofile.profile_picture %}
+                                        <img src="{{ application.applicant.jobseekerprofile.profile_picture.url }}" 
+                                             alt="Profile Picture" class="rounded-circle" 
+                                             style="width: 60px; height: 60px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" 
+                                             style="width: 60px; height: 60px;">
+                                            <i class="fas fa-user fa-2x text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="mb-1">
+                                        {{ application.applicant.jobseekerprofile.full_name|default:application.applicant.username }}
+                                    </h6>
+                                    <p class="text-muted mb-2">{{ application.applicant.email }}</p>
+                                    
+                                    {% if application.applicant.jobseekerprofile.location %}
+                                        <small class="text-muted">
+                                            <i class="fas fa-map-marker-alt me-1"></i>{{ application.applicant.jobseekerprofile.location }}
+                                        </small>
+                                    {% endif %}
+                                    
+                                    {% if application.applicant.jobseekerprofile.skills %}
+                                        <div class="mt-2">
+                                            <small><strong>Skills:</strong></small>
+                                            <div class="skills-preview">
+                                                {% for skill in application.applicant.jobseekerprofile.get_skills_list|slice:":3" %}
+                                                    <span class="badge bg-light text-dark me-1">{{ skill }}</span>
+                                                {% endfor %}
+                                                {% if application.applicant.jobseekerprofile.get_skills_list|length > 3 %}
+                                                    <span class="badge bg-light text-muted">+{{ application.applicant.jobseekerprofile.get_skills_list|length|add:"-3" }} more</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-2 text-center">
+                                    <div class="application-status status-{{ application.status }} mb-2">
+                                        {{ application.get_status_display }}
+                                    </div>
+                                    <small class="text-muted">Applied {{ application.applied_at|date:"M d" }}</small>
+                                    
+                                    {% if application.applicant.jobseekerprofile.resume %}
+                                        <div class="mt-2">
+                                            <a href="{{ application.applicant.jobseekerprofile.resume.url }}" 
+                                               class="btn btn-sm btn-outline-primary" target="_blank">
+                                                <i class="fas fa-file-pdf me-1"></i>Resume
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <div class="btn-group-vertical" role="group">
+                                        <a href="{% url 'application_detail' application.pk %}" 
+                                           class="btn btn-sm btn-outline-info mb-1">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="{% url 'update_application_status' application.pk %}" 
+                                           class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-edit"></i> Update
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Cover Letter Preview -->
+                            <div class="mt-3">
+                                <small><strong>Cover Letter:</strong></small>
+                                <p class="text-muted small">{{ application.cover_letter|truncatewords:25 }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                        <nav aria-label="Applications pagination" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                                            <i class="fas fa-angle-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                                            <i class="fas fa-angle-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <h5>No Applications Yet</h5>
+                        <p class="text-muted">No one has applied for this job yet. Share your job posting to attract more candidates.</p>
+                        <a href="{% url 'job_detail' job.pk %}" class="btn btn-primary">
+                            <i class="fas fa-eye me-2"></i>View Job Posting
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusFilters = document.querySelectorAll('input[name="statusFilter"]');
+    const applicationItems = document.querySelectorAll('.application-item');
+    
+    statusFilters.forEach(filter => {
+        filter.addEventListener('change', function() {
+            const filterValue = this.id;
+            
+            applicationItems.forEach(item => {
+                if (filterValue === 'all') {
+                    item.style.display = 'block';
+                } else {
+                    const itemStatus = item.getAttribute('data-status');
+                    item.style.display = itemStatus === filterValue ? 'block' : 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

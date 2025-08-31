@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+
+{% block title %}Application Details - {{ application.applicant.jobseekerprofile.full_name|default:application.applicant.username }} - Job Board{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Application Details Card -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h4><i class="fas fa-file-alt me-2"></i>Application Details</h4>
+                    <span class="application-status status-{{ application.status }}">
+                        {{ application.get_status_display }}
+                    </span>
+                </div>
+                <div>
+                    {% if application.job.employer == user %}
+                        <a href="{% url 'update_application_status' application.pk %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit me-1"></i>Update Status
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Job Information -->
+                <div class="bg-light p-3 rounded mb-4">
+                    <h5><i class="fas fa-briefcase me-2"></i>{{ application.job.title }}</h5>
+                    <h6 class="text-muted">{{ application.job.company_name }}</h6>
+                    <div class="job-meta mt-2">
+                        <span class="me-3">
+                            <i class="fas fa-map-marker-alt"></i>{{ application.job.location }}
+                        </span>
+                        <span class="me-3">
+                            <i class="fas fa-clock"></i>{{ application.job.get_job_type_display }}
+                        </span>
+                        {% if application.job.salary_min or application.job.salary_max %}
+                            <span class="salary-range">{{ application.job.get_salary_range }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'job_detail' application.job.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt me-1"></i>View Job Posting
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Cover Letter -->
+                <div class="mb-4">
+                    <h5><i class="fas fa-envelope-open-text me-2"></i>Cover Letter</h5>
+                    <div class="border rounded p-3 bg-white">
+                        <div class="text-break">
+                            {{ application.cover_letter|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Application Timeline -->
+                <div class="mb-4">
+                    <h5><i class="fas fa-history me-2"></i>Application Timeline</h5>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6>Application Submitted</h6>
+                                <p class="text-muted mb-1">{{ application.applied_at|date:"F d, Y \a\t g:i A" }}</p>
+                                <small class="text-muted">Application received and pending review</small>
+                            </div>
+                        </div>
+                        
+                        {% if application.updated_at != application.applied_at %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker 
+                                    {% if application.status == 'accepted' %}bg-success{% elif application.status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %}">
+                                </div>
+                                <div class="timeline-content">
+                                    <h6>Status Updated</h6>
+                                    <p class="text-muted mb-1">{{ application.updated_at|date:"F d, Y \a\t g:i A" }}</p>
+                                    <small class="text-muted">Status changed to: {{ application.get_status_display }}</small>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Employer Notes (if any) -->
+                {% if application.notes and application.job.employer == user %}
+                    <div class="mb-4">
+                        <h5><i class="fas fa-sticky-note me-2"></i>Internal Notes</h5>
+                        <div class="alert alert-info">
+                            <small><strong>Note:</strong> These notes are only visible to you as the employer.</small>
+                        </div>
+                        <div class="border rounded p-3 bg-light">
+                            {{ application.notes|linebreaks }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Applicant Profile Card -->
+        <div class="profile-card mb-4">
+            <div class="profile-header text-center">
+                {% if application.applicant.jobseekerprofile.profile_picture %}
+                    <img src="{{ application.applicant.jobseekerprofile.profile_picture.url }}" 
+                         alt="Profile Picture" class="profile-picture mb-3">
+                {% else %}
+                    <div class="profile-picture mb-3 d-flex align-items-center justify-content-center bg-light text-dark">
+                        <i class="fas fa-user fa-3x"></i>
+                    </div>
+                {% endif %}
+                <h4>{{ application.applicant.jobseekerprofile.full_name|default:application.applicant.username }}</h4>
+                {% if application.applicant.jobseekerprofile.location %}
+                    <p class="mb-0">{{ application.applicant.jobseekerprofile.location }}</p>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <!-- Contact Information -->
+                <div class="mb-3">
+                    <strong>Email:</strong>
+                    <a href="mailto:{{ application.applicant.email }}">{{ application.applicant.email }}</a>
+                </div>
+                
+                {% if application.applicant.jobseekerprofile.phone_number %}
+                    <div class="mb-3">
+                        <strong>Phone:</strong> 
+                        <a href="tel:{{ application.applicant.jobseekerprofile.phone_number }}">
+                            {{ application.applicant.jobseekerprofile.phone_number }}
+                        </a>
+                    </div>
+                {% endif %}
+                
+                <!-- Skills -->
+                {% if application.applicant.jobseekerprofile.skills %}
+                    <div class="mb-3">
+                        <strong>Skills:</strong>
+                        <ul class="skills-list mt-2">
+                            {% for skill in application.applicant.jobseekerprofile.get_skills_list %}
+                                <li>{{ skill }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <!-- Links and Resume -->
+                <div class="mb-3">
+                    {% if application.applicant.jobseekerprofile.resume %}
+                        <a href="{{ application.applicant.jobseekerprofile.resume.url }}" 
+                           class="btn btn-primary btn-sm mb-2 w-100" target="_blank">
+                            <i class="fas fa-file-pdf me-2"></i>Download Resume
+                        </a>
+                    {% endif %}
+                    
+                    {% if application.applicant.jobseekerprofile.linkedin_url %}
+                        <a href="{{ application.applicant.jobseekerprofile.linkedin_url }}" 
+                           class="btn btn-outline-info btn-sm mb-2 w-100" target="_blank">
+                            <i class="fab fa-linkedin me-2"></i>LinkedIn Profile
+                        </a>
+                    {% endif %}
+                    
+                    {% if application.applicant.jobseekerprofile.portfolio_url %}
+                        <a href="{{ application.applicant.jobseekerprofile.portfolio_url }}" 
+                           class="btn btn-outline-success btn-sm mb-2 w-100" target="_blank">
+                            <i class="fas fa-globe me-2"></i>Portfolio
+                        </a>
+                    {% endif %}
+                </div>
+
+                <!-- View Full Profile Link -->
+                <div class="text-center">
+                    <a href="{% url 'job_seeker_profile_detail' application.applicant.jobseekerprofile.pk %}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user me-1"></i>View Full Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        {% if application.job.employer == user %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if application.status == 'pending' %}
+                            <a href="{% url 'update_application_status' application.pk %}?status=reviewed" 
+                               class="btn btn-info btn-sm">
+                                <i class="fas fa-eye me-2"></i>Mark as Reviewed
+                            </a>
+                            <a href="{% url 'update_application_status' application.pk %}?status=accepted" 
+                               class="btn btn-success btn-sm">
+                                <i class="fas fa-check me-2"></i>Accept Application
+                            </a>
+                            <a href="{% url 'update_application_status' application.pk %}?status=rejected" 
+                               class="btn btn-danger btn-sm">
+                                <i class="fas fa-times me-2"></i>Reject Application
+                            </a>
+                        {% elif application.status == 'reviewed' %}
+                            <a href="{% url 'update_application_status' application.pk %}?status=accepted" 
+                               class="btn btn-success btn-sm">
+                                <i class="fas fa-check me-2"></i>Accept Application
+                            </a>
+                            <a href="{% url 'update_application_status' application.pk %}?status=rejected" 
+                               class="btn btn-danger btn-sm">
+                                <i class="fas fa-times me-2"></i>Reject Application
+                            </a>
+                        {% else %}
+                            <a href="{% url 'update_application_status' application.pk %}" 
+                               class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit me-2"></i>Update Status
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Navigation -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-navigation me-2"></i>Navigation</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'job_applications' application.job.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Applications
+                    </a>
+                    <a href="{% url 'job_detail' application.job.pk %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-briefcase me-2"></i>View Job Posting
+                    </a>
+                    <a href="{% url 'employer_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -25px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 3px solid white;
+}
+
+.timeline-content h6 {
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+</style>
+{% endblock %}
+{% endblock %}

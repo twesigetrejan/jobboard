@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Job - {{ job.title }} - Job Board{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white text-center">
+                <h3><i class="fas fa-exclamation-triangle me-2"></i>Delete Job Posting</h3>
+                <p class="mb-0">This action cannot be undone</p>
+            </div>
+            <div class="card-body">
+                <!-- Job Details -->
+                <div class="alert alert-light border">
+                    <h5><i class="fas fa-briefcase me-2"></i>{{ job.title }}</h5>
+                    <h6 class="text-muted">{{ job.company_name }}</h6>
+                    <div class="mt-3">
+                        <p><strong>Location:</strong> {{ job.location }}</p>
+                        <p><strong>Type:</strong> {{ job.get_job_type_display }}</p>
+                        <p><strong>Posted:</strong> {{ job.created_at|date:"M d, Y" }}</p>
+                        <p><strong>Status:</strong> 
+                            {% if job.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Applications:</strong> {{ job.applications_count }}</p>
+                    </div>
+                </div>
+
+                <!-- Warning Messages -->
+                {% if job.applications_count > 0 %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> This job has <strong>{{ job.applications_count }} application{{ job.applications_count|pluralize }}</strong>. 
+                        Deleting this job will also permanently delete all associated applications and candidate data.
+                    </div>
+                {% endif %}
+
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Important:</strong> This action is permanent and cannot be undone. All data associated with this job posting will be permanently deleted.
+                </div>
+
+                <!-- Consequences List -->
+                <div class="mb-4">
+                    <h6><i class="fas fa-list me-2"></i>What will be deleted:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-danger me-2"></i>The job posting and all its details</li>
+                        {% if job.applications_count > 0 %}
+                            <li><i class="fas fa-check text-danger me-2"></i>All {{ job.applications_count }} application{{ job.applications_count|pluralize }}</li>
+                            <li><i class="fas fa-check text-danger me-2"></i>Candidate cover letters and application data</li>
+                        {% endif %}
+                        <li><i class="fas fa-check text-danger me-2"></i>Application history and statistics</li>
+                    </ul>
+                </div>
+
+                <!-- Confirmation Form -->
+                <form method="post" class="mb-0">
+                    {% csrf_token %}
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                        <label class="form-check-label" for="confirmDelete">
+                            I understand that this action is permanent and cannot be undone
+                        </label>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                                <i class="fas fa-trash me-2"></i>Delete Job Permanently
+                            </button>
+                        </div>
+                        <div>
+                            <a href="{% url 'job_detail' job.pk %}" class="btn btn-secondary me-2">
+                                <i class="fas fa-eye me-2"></i>View Job
+                            </a>
+                            <a href="{% url 'employer_dashboard' %}" class="btn btn-success">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Alternative Actions -->
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Alternative Actions</h5>
+            </div>
+            <div class="card-body">
+                <p>Instead of deleting, you might want to:</p>
+                <div class="d-grid gap-2">
+                    {% if job.is_active %}
+                        <a href="{% url 'edit_job' job.pk %}" class="btn btn-outline-warning">
+                            <i class="fas fa-pause me-2"></i>Deactivate Job (Hide from job seekers)
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'edit_job' job.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-2"></i>Edit Job Details
+                    </a>
+                    <a href="{% url 'job_applications' job.pk %}" class="btn btn-outline-info">
+                        <i class="fas fa-users me-2"></i>Manage Applications
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('confirmDelete');
+    const deleteButton = document.getElementById('deleteButton');
+    
+    checkbox.addEventListener('change', function() {
+        deleteButton.disabled = !this.checked;
+        if (this.checked) {
+            deleteButton.classList.remove('btn-secondary');
+            deleteButton.classList.add('btn-danger');
+        } else {
+            deleteButton.classList.remove('btn-danger');
+            deleteButton.classList.add('btn-secondary');
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
