@@ -40,6 +40,9 @@
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
                             {{ form.password }}
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="fas fa-eye" id="eyeIcon"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -60,4 +63,24 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle password visibility
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#id_password');
+    const eyeIcon = document.querySelector('#eyeIcon');
+
+    if (togglePassword && password && eyeIcon) {
+        togglePassword.addEventListener('click', function() {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            eyeIcon.classList.toggle('fa-eye');
+            eyeIcon.classList.toggle('fa-eye-slash');
+        });
+    }
+});
+</script>
 {% endblock %}

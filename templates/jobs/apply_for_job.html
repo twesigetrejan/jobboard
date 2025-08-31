@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Apply for {{ job.title }} - Job Board{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3><i class="fas fa-paper-plane me-2"></i>Apply for Position</h3>
+            </div>
+            <div class="card-body">
+                <!-- Job Summary -->
+                <div class="bg-light p-3 rounded mb-4">
+                    <h5>{{ job.title }}</h5>
+                    <h6 class="company-name">{{ job.company_name }}</h6>
+                    <div class="job-meta">
+                        <span class="me-3">
+                            <i class="fas fa-map-marker-alt"></i>{{ job.location }}
+                        </span>
+                        <span class="me-3">
+                            <i class="fas fa-clock"></i>{{ job.get_job_type_display }}
+                        </span>
+                        {% if job.salary_min or job.salary_max %}
+                            <span class="salary-range">{{ job.get_salary_range }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="{{ form.cover_letter.id_for_label }}" class="form-label">Cover Letter *</label>
+                        {{ form.cover_letter }}
+                        {% if form.cover_letter.errors %}
+                            <div class="text-danger">
+                                {% for error in form.cover_letter.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if form.cover_letter.help_text %}
+                            <small class="form-text text-muted">{{ form.cover_letter.help_text }}</small>
+                        {% endif %}
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> Your resume and profile information will be automatically included with this application.
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Application
+                        </button>
+                        <a href="{% url 'job_detail' job.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Job
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Your Profile Preview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user me-2"></i>Your Profile</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    {% if job_seeker_profile.profile_picture %}
+                        <img src="{{ job_seeker_profile.profile_picture.url }}" alt="Profile Picture" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% else %}
+                        <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                            <i class="fas fa-user fa-2x text-muted"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <h6 class="text-center">{{ job_seeker_profile.full_name }}</h6>
+                {% if job_seeker_profile.location %}
+                    <p class="text-center text-muted">{{ job_seeker_profile.location }}</p>
+                {% endif %}
+                
+                {% if job_seeker_profile.skills %}
+                    <div class="mb-3">
+                        <strong>Skills:</strong>
+                        <ul class="skills-list">
+                            {% for skill in job_seeker_profile.get_skills_list|slice:":5" %}
+                                <li>{{ skill }}</li>
+                            {% endfor %}
+                            {% if job_seeker_profile.get_skills_list|length > 5 %}
+                                <li class="text-muted">+{{ job_seeker_profile.get_skills_list|length|add:"-5" }} more...</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <div class="text-center">
+                    {% if job_seeker_profile.resume %}
+                        <span class="badge bg-success mb-2">
+                            <i class="fas fa-check me-1"></i>Resume Attached
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning mb-2">
+                            <i class="fas fa-exclamation-triangle me-1"></i>No Resume
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="text-center">
+                    <a href="{% url 'edit_job_seeker_profile' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit me-1"></i>Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Application Tips -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Application Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Customize your cover letter for this specific role
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Highlight relevant skills and experience
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Show enthusiasm for the company and position
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Proofread before submitting
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}Job Seeker Dashboard - Job Board{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user me-2"></i>My Profile</h2>
+            <a href="{% url 'home' %}" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Browse Jobs
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_applications }}</div>
+            <div>Total Applications</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-number">{{ pending_applications }}</div>
+            <div>Pending Applications</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-number">{{ accepted_applications }}</div>
+            <div>Accepted Applications</div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Profile Card -->
+    <div class="col-lg-4">
+        <div class="profile-card mb-4">
+            <div class="profile-header text-center">
+                {% if job_seeker_profile.profile_picture %}
+                    <img src="{{ job_seeker_profile.profile_picture.url }}" alt="Profile Picture" class="profile-picture mb-3">
+                {% else %}
+                    <div class="profile-picture mb-3 d-flex align-items-center justify-content-center bg-light text-dark">
+                        <i class="fas fa-user fa-3x"></i>
+                    </div>
+                {% endif %}
+                <h4>{{ job_seeker_profile.full_name }}</h4>
+                {% if job_seeker_profile.location %}
+                    <p class="mb-0">{{ job_seeker_profile.location }}</p>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Email:</strong> {{ user.email }}
+                </div>
+                
+                {% if job_seeker_profile.phone_number %}
+                    <div class="mb-3">
+                        <strong>Phone:</strong> {{ job_seeker_profile.phone_number }}
+                    </div>
+                {% endif %}
+                
+                {% if job_seeker_profile.skills %}
+                    <div class="mb-3">
+                        <strong>Skills:</strong>
+                        <ul class="skills-list">
+                            {% for skill in job_seeker_profile.get_skills_list %}
+                                <li>{{ skill }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    {% if job_seeker_profile.resume %}
+                        <a href="{{ job_seeker_profile.resume.url }}" class="btn btn-sm btn-outline-primary me-2" target="_blank">
+                            <i class="fas fa-file-pdf me-1"></i>View Resume
+                        </a>
+                    {% endif %}
+                    
+                    {% if job_seeker_profile.linkedin_url %}
+                        <a href="{{ job_seeker_profile.linkedin_url }}" class="btn btn-sm btn-outline-info me-2" target="_blank">
+                            <i class="fab fa-linkedin me-1"></i>LinkedIn
+                        </a>
+                    {% endif %}
+                    
+                    {% if job_seeker_profile.portfolio_url %}
+                        <a href="{{ job_seeker_profile.portfolio_url }}" class="btn btn-sm btn-outline-success" target="_blank">
+                            <i class="fas fa-globe me-1"></i>Portfolio
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <a href="{% url 'edit_job_seeker_profile' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-edit me-1"></i>Edit Profile
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Applications -->
+    <div class="col-lg-8">
+        <div class="card dashboard-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>My Applications</h5>
+                <span class="badge bg-primary">{{ applications.count }} application{{ applications.count|pluralize }}</span>
+            </div>
+            <div class="card-body">
+                {% if applications %}
+                    {% for application in applications %}
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <a href="{% url 'job_detail' application.job.pk %}" class="job-title">
+                                            {{ application.job.title }}
+                                        </a>
+                                    </h6>
+                                    <p class="company-name mb-2">{{ application.job.company_name }}</p>
+                                    <small class="text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>{{ application.job.location }} •
+                                        <i class="fas fa-clock ms-2 me-1"></i>{{ application.job.get_job_type_display }} •
+                                        <i class="fas fa-calendar ms-2 me-1"></i>Applied {{ application.applied_at|date:"M d, Y" }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="application-status status-{{ application.status }}">
+                                        {{ application.get_status_display }}
+                                    </span>
+                                    <div class="mt-2">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                Actions
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="{% url 'job_detail' application.job.pk %}">View Job</a></li>
+                                                <li><a class="dropdown-item" href="{% url 'application_detail' application.pk %}">View Application</a></li>
+                                                {% if application.status == 'pending' %}
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="{% url 'withdraw_application' application.pk %}">Withdraw</a></li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <h5>No applications yet</h5>
+                        <p class="text-muted">Start browsing jobs and apply to positions that interest you.</p>
+                        <a href="{% url 'home' %}" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>Browse Jobs
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if job_seeker_profile.experience or job_seeker_profile.education %}
+<div class="row mt-4">
+    {% if job_seeker_profile.experience %}
+        <div class="col-lg-6">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Experience</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-break">{{ job_seeker_profile.experience|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if job_seeker_profile.education %}
+        <div class="col-lg-6">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-graduation-cap me-2"></i>Education</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-break">{{ job_seeker_profile.education|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
