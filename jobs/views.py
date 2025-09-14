@@ -201,6 +201,9 @@ def job_applications(request, pk):
     context = {
         'job': job,
         'page_obj': page_obj,
+        'pending_applications': Application.objects.filter(job=job, status='pending').count(),
+        'accepted_applications': Application.objects.filter(job=job,status='accepted').count(),
+        'rejected_applications': Application.objects.filter(job=job,status='rejected').count()
     }
     return render(request, 'jobs/job_applications.html', context)
 

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Employer Profile - Job Board{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white text-center">
+                <h3><i class="fas fa-building me-2"></i>Complete Your Employer Profile</h3>
+                <p class="mb-0">Tell us about your company to start posting jobs</p>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                       {{ user_form.as_p }}
+                       {{ profile_form.as_p }}
+                    
+                   
+                    <hr class="my-4">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Edit Profile
+                            </button>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <small class="text-muted">* Required fields</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

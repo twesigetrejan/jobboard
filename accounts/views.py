@@ -15,11 +15,12 @@ def register(request):
             user = form.save()
             login(request, user)
             messages.success(request, f'Account created successfully! Welcome {user.username}')
+            # return redirect('login')
             
             # Redirect to profile creation based on role
-            if user.userprofile.role == 'employer':
+        if user.userprofile.role == 'employer':
                 return redirect('create_employer_profile')
-            else:
+        else:
                 return redirect('create_job_seeker_profile')
     else:
         form = CustomUserCreationForm()
@@ -41,7 +42,7 @@ def create_employer_profile(request):
             profile.user = request.user
             profile.save()
             messages.success(request, 'Employer profile created successfully!')
-            return redirect('employer_dashboard')
+            return redirect('login')
     else:
         form = EmployerProfileForm()
     return render(request, 'accounts/create_employer_profile.html', {'form': form})
@@ -62,7 +63,7 @@ def create_job_seeker_profile(request):
             profile.user = request.user
             profile.save()
             messages.success(request, 'Profile created successfully!')
-            return redirect('job_seeker_dashboard')
+            return redirect('login')
     else:
         form = JobSeekerProfileForm()
     return render(request, 'accounts/create_job_seeker_profile.html', {'form': form})
@@ -85,6 +86,7 @@ def employer_dashboard(request):
         'total_jobs': jobs.count(),
         'active_jobs': jobs.filter(is_active=True).count(),
         'total_applications': Application.objects.filter(job__employer=request.user).count(),
+        
     }
     return render(request, 'accounts/employer_dashboard.html', context)
 
