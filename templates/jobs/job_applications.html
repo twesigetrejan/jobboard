@@ -67,22 +67,20 @@
             <div class="col-md-3">
                 <div class="stat-card bg-warning text-white">
                     <div class="stat-number">
-                        {% with pending_count=page_obj.object_list|length %}
-                            {{ pending_count|default:0 }}
-                        {% endwith %}
+                        {{ pending_applications }}
                     </div>
                     <div>Pending Review</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card bg-success text-white">
-                    <div class="stat-number">0</div>
+                    <div class="stat-number">{{accepted_applications}}</div>
                     <div>Accepted</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card bg-danger text-white">
-                    <div class="stat-number">0</div>
+                    <div class="stat-number">{{rejected_applications}}</div>
                     <div>Rejected</div>
                 </div>
             </div>

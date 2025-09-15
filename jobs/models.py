@@ -11,7 +11,6 @@ JOB_TYPE_CHOICES = (
     ('internship', 'Internship'),
     ('freelance', 'Freelance'),
 )
-
 # Application status choices
 APPLICATION_STATUS_CHOICES = (
     ('pending', 'Pending'),
