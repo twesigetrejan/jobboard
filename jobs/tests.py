@@ -34,6 +34,30 @@ class CreateJobViewTest(TestCase):
         response = self.client.get(reverse('create_job'))
         self.assertRedirects(response, reverse('create_employer_profile'))
 
+    def test_create_job_missing_required_fields(self):
+        response = self.client.post(reverse('create_job'), {
+            'title': '',  # Missing title
+            'company_name': '',  # Missing company name
+            'description': '',
+            'requirements': '',
+            'location': '',
+            'job_type': '',
+        })
+        self.assertEqual(response.status_code, 200)  # Should not redirect
+        self.assertContains(response, 'This field is required', status_code=200)
+
+    def test_create_job_invalid_job_type(self):
+        response = self.client.post(reverse('create_job'), {
+            'title': 'Test Job',
+            'company_name': 'TestCo',
+            'description': 'Test Description',
+            'requirements': 'Test Requirements',
+            'location': 'Test Location',
+            'job_type': 'invalid_type',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Select a valid choice', status_code=200)
+
 
 
 class EditJobViewTest(TestCase):
@@ -67,6 +91,42 @@ class EditJobViewTest(TestCase):
         self.job.refresh_from_db()
         self.assertEqual(self.job.title, 'Updated Title')
         self.assertEqual(self.job.description, 'Updated Description')
+
+    def test_edit_job_unauthorized(self):
+        other_user = User.objects.create_user(username='other', password='testpass')
+        self.client.login(username='other', password='testpass')
+        response = self.client.post(reverse('edit_job', args=[self.job.pk]), {
+            'title': 'Hacked Title',
+            'company_name': 'TestCo',
+            'description': 'Hacked',
+            'requirements': 'Hacked',
+            'location': 'Hacked',
+            'job_type': 'full_time',
+        })
+        self.assertEqual(response.status_code, 404)
+        self.job.refresh_from_db()
+        self.assertNotEqual(self.job.title, 'Hacked Title')
+
+    def test_delete_job_success(self):
+        response = self.client.post(reverse('delete_job', args=[self.job.pk]))
+        self.assertRedirects(response, reverse('employer_dashboard'))
+        with self.assertRaises(Job.DoesNotExist):
+            Job.objects.get(pk=self.job.pk)
+
+    def test_delete_job_unauthorized(self):
+        other_user = User.objects.create_user(username='other', password='testpass')
+        self.client.login(username='other', password='testpass')
+        response = self.client.post(reverse('delete_job', args=[self.job.pk]))
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Job.objects.filter(pk=self.job.pk).exists())
+
+    def test_delete_job_removes_applications(self):
+        applicant = User.objects.create_user(username='applicant', password='testpass')
+        app = Application.objects.create(job=self.job, applicant=applicant, cover_letter='Test')
+        self.assertTrue(Application.objects.filter(pk=app.pk).exists())
+        response = self.client.post(reverse('delete_job', args=[self.job.pk]))
+        self.assertRedirects(response, reverse('employer_dashboard'))
+        self.assertFalse(Application.objects.filter(pk=app.pk).exists())
 
 
 
