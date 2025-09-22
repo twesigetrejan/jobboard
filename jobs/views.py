@@ -243,3 +243,6 @@ def withdraw_application(request, pk):
         return redirect('job_detail', pk=job_pk)
     
     return render(request, 'jobs/withdraw_application.html', {'application': application})
+
+
+
