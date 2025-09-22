@@ -1,0 +1,191 @@
+Setup (setUp)
+
+Before any test runs:
+
+Creates a test client (self.client) to simulate HTTP requests.
+
+Creates an employer user and their profile.
+
+Creates a job posted by the employer.
+
+Creates a job seeker user and their profile.
+
+This setup ensures each test has a clean, isolated environment with users, profiles, and a job in the database.
+
+1. test_cannot_create_job_without_employer_profile
+
+Deletes the employer profile.
+
+Logs in as employer.
+
+Tries to access the job creation page.
+
+Expects a redirect to the page where the employer must create a profile first.
+
+Purpose: Ensures users cannot create jobs without completing their employer profile.
+
+2. test_cannot_edit_job_as_non_owner
+
+Creates another user (other).
+
+Logs in as that user.
+
+Attempts to edit the job posted by the employer.
+
+Expects 404 (not found) and verifies the job title hasn’t changed.
+
+Purpose: Ensures only the job owner can edit it.
+
+3. test_delete_job_removes_applications
+
+Creates an application for the job.
+
+Logs in as the employer.
+
+Deletes the job.
+
+Checks that the response redirects to the dashboard and that the application was also deleted.
+
+Purpose: Ensures deleting a job cascades to remove associated applications.
+
+4. test_update_application_status_unauthorized
+
+Creates an application for the job.
+
+Logs in as a different employer.
+
+Attempts to change the application status.
+
+Expects 404 and confirms the status remains unchanged.
+
+Purpose: Unauthorized users cannot modify application status.
+
+5. test_job_application_invalid_job_type
+
+Logs in as employer.
+
+Tries to create a job with an invalid job type.
+
+Expects 200 (page reload) and an error message about invalid choice.
+
+Purpose: Ensures form validation works for job type choices.
+
+6. test_job_creation_missing_required_fields
+
+Logs in as employer.
+
+Submits a job creation form with empty required fields.
+
+Expects 200 and error messages about missing required fields.
+
+Purpose: Validates that required fields are enforced.
+
+7. test_job_edit_requires_authentication
+
+Logs out the client.
+
+Tries to access the job edit page.
+
+Expects non-200 response (unauthenticated users cannot edit).
+
+Purpose: Only logged-in users can edit jobs.
+
+8. test_job_delete_requires_authentication
+
+Logs out the client.
+
+Tries to delete a job.
+
+Expects non-200 response and verifies the job still exists.
+
+Purpose: Only logged-in users can delete jobs.
+
+9. test_application_creation_requires_login
+
+Logs out the client.
+
+Tries to apply for a job.
+
+Expects non-200 response.
+
+Purpose: Job applications require the user to be logged in.
+
+10. test_job_seeker_cannot_view_other_applications
+
+Logs in as job seeker.
+
+Tries to view applications for the job.
+
+Expects non-200 response.
+
+Purpose: Job seekers should not access applications submitted to a job—they are private to the employer.
+
+11. test_employer_can_view_applications
+
+Logs in as employer.
+
+Views applications for their job.
+
+Expects 200 and that the page contains the job title.
+
+Purpose: Employers can view applications submitted to their jobs.
+
+12. test_job_seeker_profile_edit_requires_login
+
+Logs out the client.
+
+Tries to access the job seeker profile edit page.
+
+Expects non-200 response.
+
+Purpose: Profile edits require login.
+
+13. test_employer_profile_edit_requires_login
+
+Logs out the client.
+
+Tries to access employer profile edit page.
+
+Expects non-200 response.
+
+Purpose: Ensures authentication is required for employer profile edits.
+
+14. test_job_seeker_cannot_edit_employer_profile
+
+Logs in as job seeker.
+
+Tries to edit employer profile.
+
+Expects 404.
+
+Purpose: Job seekers cannot edit employer profiles.
+
+15. test_employer_cannot_edit_job_seeker_profile
+
+Logs in as employer.
+
+Tries to edit job seeker profile.
+
+Expects 404.
+
+Purpose: Employers cannot edit job seeker profiles.
+
+16. test_job_seeker_cannot_delete_job
+
+Logs in as job seeker.
+
+Attempts to delete a job.
+
+Expects 404 and verifies the job still exists.
+
+Purpose: Only employers can delete jobs.
+
+17. test_employer_cannot_apply_to_own_job
+
+Logs in as employer.
+
+Attempts to apply for their own job.
+
+Expects non-200 response.
+
+Purpose: Employers cannot apply to jobs they posted.
