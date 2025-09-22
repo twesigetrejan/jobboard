@@ -176,8 +176,9 @@ def employer_profile_detail(request, pk):
 
 def job_seeker_profile_detail(request, pk):
     job_seeker_profile = get_object_or_404(JobSeekerProfile, pk=pk)
-    
+    # For compatibility with the template, pass as 'profile'
     context = {
-        'job_seeker_profile': job_seeker_profile,
+        'profile': job_seeker_profile,
+        'user': request.user,
     }
     return render(request, 'accounts/job_seeker_profile_detail.html', context)
