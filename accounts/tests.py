@@ -18,6 +18,8 @@ class EditEmployerProfileViewTest(TestCase):
 
 	def test_edit_employer_profile_post_success(self):
 		response = self.client.post(reverse('edit_employer_profile'), {
+			'username': 'employer',
+			'email': 'emp@test.com',
 			'company_name': 'NewCo',
 			'company_description': 'newdesc',
 			'location': 'newloc',
@@ -48,6 +50,8 @@ class EditJobSeekerProfileViewTest(TestCase):
 
 	def test_edit_job_seeker_profile_post_success(self):
 		response = self.client.post(reverse('edit_job_seeker_profile'), {
+			'username': 'seeker',
+			'email': 'seek@test.com',
 			'full_name': 'New Name',
 			'skills': 'Django',
 			'experience': 'newexp',
