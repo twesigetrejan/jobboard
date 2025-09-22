@@ -136,6 +136,10 @@ def edit_employer_profile(request):
         user_form = UserUpdateForm(instance=request.user)
         profile_form = EmployerProfileForm(instance=employer_profile)
     
+    if request.method == 'POST':
+        if not user_form.is_valid() or not profile_form.is_valid():
+            print('User form errors:', user_form.errors)
+            print('Profile form errors:', profile_form.errors)
     return render(request, 'accounts/edit_employer_profile.html', {
         'user_form': user_form,
         'profile_form': profile_form
@@ -159,6 +163,10 @@ def edit_job_seeker_profile(request):
         user_form = UserUpdateForm(instance=request.user)
         profile_form = JobSeekerProfileForm(instance=job_seeker_profile)
     
+    if request.method == 'POST':
+        if not user_form.is_valid() or not profile_form.is_valid():
+            print('User form errors:', user_form.errors)
+            print('Profile form errors:', profile_form.errors)
     return render(request, 'accounts/edit_job_seeker_profile.html', {
         'user_form': user_form,
         'profile_form': profile_form
