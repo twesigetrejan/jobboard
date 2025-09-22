@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Company Profile - {{ employer_profile.company_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white text-center">
+                    <h2 class="mb-0"><i class="fas fa-building me-2"></i>{{ employer_profile.company_name }}</h2>
+                </div>
+                <div class="card-body">
+                    {% if employer_profile.logo %}
+                        <div class="text-center mb-3">
+                            <img src="{{ employer_profile.logo.url }}" alt="Company Logo" class="img-fluid rounded" style="max-height: 120px;">
+                        </div>
+                    {% endif %}
+                    <h5 class="mb-2">About the Company</h5>
+                    <p>{{ employer_profile.company_description }}</p>
+                    <hr>
+                    <h6>Location:</h6>
+                    <p>{{ employer_profile.location }}</p>
+                    {% if employer_profile.website %}
+                        <h6>Website:</h6>
+                        <p><a href="{{ employer_profile.website }}" target="_blank">{{ employer_profile.website }}</a></p>
+                    {% endif %}
+                    <h6>Contact Email:</h6>
+                    <p>{{ employer_profile.contact_email }}</p>
+                </div>
+            </div>
+            <div class="text-center">
+                <a href="javascript:history.back()" class="btn btn-secondary">Back</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

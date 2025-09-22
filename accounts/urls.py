@@ -20,4 +20,7 @@ urlpatterns = [
     # Profile viewing
     path('employer/<int:pk>/', views.employer_profile_detail, name='employer_profile_detail'),
     path('job-seeker/<int:pk>/', views.job_seeker_profile_detail, name='job_seeker_profile_detail'),
+
+    # My Applications
+    path('my-applications/', views.my_applications, name='my_applications'),
 ]

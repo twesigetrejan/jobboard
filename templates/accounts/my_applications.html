@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}My Applications - Job Board{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4 text-center"><i class="fas fa-file-alt me-2"></i>My Applications</h2>
+    {% if applications %}
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Company</th>
+                                <th>Status</th>
+                                <th>Date Applied</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for application in applications %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'job_detail' application.job.pk %}">{{ application.job.title }}</a>
+                                    </td>
+                                    <td>{{ application.job.company_name }}</td>
+                                    <td>
+                                        {% if application.status == 'pending' %}
+                                            <span class="badge bg-warning text-dark">Pending</span>
+                                        {% elif application.status == 'accepted' %}
+                                            <span class="badge bg-success">Accepted</span>
+                                        {% elif application.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ application.status|capfirst }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ application.created_at|date:'M d, Y' }}</td>
+                                    <td>
+                                        <a href="{% url 'application_detail' application.pk %}" class="btn btn-sm btn-outline-info">View</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle me-2"></i>You have not applied to any jobs yet.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

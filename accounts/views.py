@@ -1,3 +1,12 @@
+from django.contrib.auth.decorators import login_required
+# My Applications view for job seekers
+@login_required
+def my_applications(request):
+    applications = Application.objects.filter(applicant=request.user).select_related('job').order_by('-created_at')
+    context = {
+        'applications': applications,
+    }
+    return render(request, 'accounts/my_applications.html', context)
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
