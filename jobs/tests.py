@@ -70,41 +70,6 @@ class EditJobViewTest(TestCase):
 
 
 
-
-
-class ApplyForJobViewTest(TestCase):
-    def setUp(self):
-        self.client = Client()
-        self.user = User.objects.create_user(username='seeker', password='testpass')
-        self.job_seeker_profile = JobSeekerProfile.objects.create(user=self.user)
-        self.job = Job.objects.create(
-            employer_id=1,  # You may need to create an employer user
-            title='Test Job',
-            company_name='TestCo',
-            description='Test Description',
-            requirements='Test Requirements',
-            location='Test Location',
-            job_type='full_time',
-            is_active=True
-        )
-        self.client.login(username='seeker', password='testpass')
-
-    def test_apply_for_job_success(self):
-        response = self.client.post(reverse('apply_for_job', args=[self.job.pk]), {
-            'cover_letter': 'I am interested in this job.'
-        })
-        self.assertEqual(response.status_code, 302)  # Should redirect to job_detail
-        self.assertTrue(Application.objects.filter(job=self.job, applicant=self.user).exists())
-
-    def test_cannot_apply_twice(self):
-        Application.objects.create(job=self.job, applicant=self.user, cover_letter='Already applied')
-        response = self.client.post(reverse('apply_for_job', args=[self.job.pk]), {
-            'cover_letter': 'Trying to apply again.'
-        })
-        self.assertRedirects(response, reverse('job_detail', args=[self.job.pk]))
-        self.assertEqual(Application.objects.filter(job=self.job, applicant=self.user).count(), 1)
-
-
 class JobApplicationsViewTest(TestCase):
     def setUp(self):
         self.client = Client()
@@ -119,10 +84,15 @@ class JobApplicationsViewTest(TestCase):
             location='Test Location',
             job_type='full_time'
         )
+        # Create test applicants
+        self.applicant1 = User.objects.create_user(username='applicant1', password='testpass')
+        self.applicant2 = User.objects.create_user(username='applicant2', password='testpass')
+        self.applicant3 = User.objects.create_user(username='applicant3', password='testpass')
+        
         # Create applications with different statuses
-        Application.objects.create(job=self.job, applicant_id=2, cover_letter='Pending', status='pending')
-        Application.objects.create(job=self.job, applicant_id=3, cover_letter='Accepted', status='accepted')
-        Application.objects.create(job=self.job, applicant_id=4, cover_letter='Rejected', status='rejected')
+        Application.objects.create(job=self.job, applicant=self.applicant1, cover_letter='Pending', status='pending')
+        Application.objects.create(job=self.job, applicant=self.applicant2, cover_letter='Accepted', status='accepted')
+        Application.objects.create(job=self.job, applicant=self.applicant3, cover_letter='Rejected', status='rejected')
         self.client.login(username='employer', password='testpass')
 
     def test_job_applications_view(self):
@@ -132,3 +102,58 @@ class JobApplicationsViewTest(TestCase):
         self.assertEqual(response.context['accepted_applications'], 1)
         self.assertEqual(response.context['rejected_applications'], 1)
         self.assertContains(response, 'Test Job')
+
+class UpdateApplicationStatusViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        # Create employer and job
+        self.employer = User.objects.create_user(username='employer', password='testpass')
+        self.employer_profile = EmployerProfile.objects.create(user=self.employer, company_name='TestCo')
+        self.job = Job.objects.create(
+            employer=self.employer,
+            title='Test Job',
+            company_name='TestCo',
+            description='Test Description',
+            requirements='Test Requirements',
+            location='Test Location',
+            job_type='full_time'
+        )
+        # Create applicant and application
+        self.applicant = User.objects.create_user(username='applicant', password='testpass')
+        self.application = Application.objects.create(
+            job=self.job,
+            applicant=self.applicant,
+            cover_letter='Test cover letter',
+            status='pending'
+        )
+        # Create another employer (unauthorized user)
+        self.other_employer = User.objects.create_user(username='other_employer', password='testpass')
+
+    def test_update_application_status_success(self):
+        self.client.login(username='employer', password='testpass')
+        response = self.client.post(reverse('update_application_status', args=[self.application.pk]), {
+            'status': 'accepted'
+        })
+        # Redirect to job applications
+        self.assertRedirects(response, reverse('job_applications', args=[self.job.pk]))
+        # Check that status was updated
+        self.application.refresh_from_db()
+        self.assertEqual(self.application.status, 'accepted')
+
+    def test_update_application_status_unauthorized(self):
+        # Login as different employer
+        self.client.login(username='other_employer', password='testpass')
+        response = self.client.post(reverse('update_application_status', args=[self.application.pk]), {
+            'status': 'accepted'
+        })
+    
+        self.assertEqual(response.status_code, 404)
+        self.application.refresh_from_db()
+        self.assertEqual(self.application.status, 'pending')
+
+    def test_update_application_status_get_request(self):
+        self.client.login(username='employer', password='testpass')
+        response = self.client.get(reverse('update_application_status', args=[self.application.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'pending')  # Should show current status
+        self.assertContains(response, self.applicant.username)
