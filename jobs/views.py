@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from .models import Job, Application
 from .forms import JobForm, ApplicationForm, JobSearchForm, ApplicationStatusForm
 from accounts.models import EmployerProfile, JobSeekerProfile
@@ -206,6 +206,18 @@ def job_applications(request, pk):
         'rejected_applications': Application.objects.filter(job=job,status='rejected').count()
     }
     return render(request, 'jobs/job_applications.html', context)
+
+
+@login_required
+def job_applications_data(request, pk):
+    """Return JSON counts for application statuses for a given job (employer only)."""
+    job = get_object_or_404(Job, pk=pk, employer=request.user)
+    data = {
+        'pending': Application.objects.filter(job=job, status='pending').count(),
+        'accepted': Application.objects.filter(job=job, status='accepted').count(),
+        'rejected': Application.objects.filter(job=job, status='rejected').count(),
+    }
+    return JsonResponse(data)
 
 @login_required
 def update_application_status(request, pk):

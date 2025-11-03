@@ -23,4 +23,7 @@ urlpatterns = [
 
     # My Applications
     path('my-applications/', views.my_applications, name='my_applications'),
+    # Employer analytics / visualizations
+    path('employer-analytics/', views.employer_analytics, name='employer_analytics'),
+    path('employer-analytics/data/', views.employer_analytics_data, name='employer_analytics_data'),
 ]

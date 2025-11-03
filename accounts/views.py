@@ -16,6 +16,11 @@ from django.db import transaction
 from .forms import CustomUserCreationForm, EmployerProfileForm, JobSeekerProfileForm, UserUpdateForm
 from .models import UserProfile, EmployerProfile, JobSeekerProfile
 from jobs.models import Job, Application
+from django.http import JsonResponse
+from django.db.models import Count
+from django.db.models.functions import TruncDate
+from django.utils import timezone
+from datetime import timedelta
 
 def register(request):
     if request.method == 'POST':
@@ -190,3 +195,78 @@ def job_seeker_profile_detail(request, pk):
         'user': request.user,
     }
     return render(request, 'accounts/job_seeker_profile_detail.html', context)
+
+
+@login_required
+def employer_analytics(request):
+    """Render a page with multiple employer visualizations."""
+    try:
+        employer_profile = EmployerProfile.objects.get(user=request.user)
+    except EmployerProfile.DoesNotExist:
+        messages.error(request, 'Please complete your employer profile first.')
+        return redirect('create_employer_profile')
+
+    return render(request, 'accounts/employer_analytics.html', {'employer_profile': employer_profile})
+
+
+@login_required
+def employer_analytics_data(request):
+    """Return aggregated data for employer visualizations as JSON."""
+    # Only include data for jobs owned by the current user
+    apps = Application.objects.filter(job__employer=request.user)
+    status_counts_qs = apps.values('status').annotate(count=Count('pk'))
+    status_counts = {item['status']: item['count'] for item in status_counts_qs}
+    # Ensure keys exist
+    status_counts_full = {
+        'pending': status_counts.get('pending', 0),
+        'reviewed': status_counts.get('reviewed', 0),
+        'accepted': status_counts.get('accepted', 0),
+        'rejected': status_counts.get('rejected', 0),
+    }
+
+    # Jobs by type
+    jobs_by_type_qs = Job.objects.filter(employer=request.user).values('job_type').annotate(count=Count('pk'))
+    jobs_by_type = {item['job_type']: item['count'] for item in jobs_by_type_qs}
+
+    # Applications over time (last 30 days)
+    start_date = timezone.now() - timedelta(days=30)
+    apps_time_qs = apps.filter(applied_at__gte=start_date).annotate(date=TruncDate('applied_at')).values('date').annotate(count=Count('pk')).order_by('date')
+    apps_over_time = [{ 'date': item['date'].isoformat(), 'count': item['count'] } for item in apps_time_qs]
+    # Conversion funnel metrics
+    total_apps = apps.count()
+    pending = status_counts_full.get('pending', 0)
+    reviewed = status_counts_full.get('reviewed', 0)
+    accepted = status_counts_full.get('accepted', 0)
+    rejected = status_counts_full.get('rejected', 0)
+    review_rate = (reviewed / total_apps) if total_apps else 0
+    accept_rate = (accepted / total_apps) if total_apps else 0
+    funnel = {
+        'total': total_apps,
+        'pending': pending,
+        'reviewed': reviewed,
+        'accepted': accepted,
+        'rejected': rejected,
+        'review_rate': review_rate,
+        'accept_rate': accept_rate,
+    }
+
+    # Applications by location (top 10)
+    loc_qs = apps.values('applicant__jobseekerprofile__location').annotate(count=Count('pk')).order_by('-count')[:10]
+    location_counts = []
+    for item in loc_qs:
+        loc = item.get('applicant__jobseekerprofile__location') or 'Unknown'
+        location_counts.append({'location': loc, 'count': item['count']})
+
+    # Top jobs by number of applications
+    top_jobs_qs = Job.objects.filter(employer=request.user).annotate(app_count=Count('applications')).order_by('-app_count')[:10]
+    top_jobs = [{'id': j.pk, 'title': j.title, 'count': j.app_count} for j in top_jobs_qs]
+
+    data = {
+        'status_counts': status_counts_full,
+        'jobs_by_type': jobs_by_type,
+        'applications_over_time': apps_over_time,
+        'funnel': funnel,
+        'location_counts': location_counts,
+        'top_jobs': top_jobs,
+    }
+    return JsonResponse(data)

@@ -19,5 +19,6 @@ urlpatterns = [
     
     # Employer application management URLs
     path('job/<int:pk>/applications/', views.job_applications, name='job_applications'),
+    path('job/<int:pk>/applications/data/', views.job_applications_data, name='job_applications_data'),
     path('application/<int:pk>/update-status/', views.update_application_status, name='update_application_status'),
 ]

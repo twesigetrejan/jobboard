@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <h2>Employer Analytics</h2>
+  <p class="text-muted">Overview of your jobs and applications (last 30 days).</p>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Applications by Status</h5>
+          <div class="chart-container chart-small">
+            <canvas id="chartStatus" style="width:100%;height:100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Jobs by Type</h5>
+          <div class="chart-container chart-small">
+            <canvas id="chartJobsByType" style="width:100%;height:100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Conversion Funnel</h5>
+          <div class="chart-container chart-small">
+            <canvas id="chartFunnel" style="width:100%;height:100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Top Jobs by Applications</h5>
+          <div class="chart-container chart-small">
+            <canvas id="chartTopJobs" style="width:100%;height:100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Applications by Location (Top 10)</h5>
+          <div class="chart-container chart-small">
+            <canvas id="chartLocations" style="width:100%;height:100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="card-title">Applications Over Time (last 30 days)</h5>
+          <div class="chart-container chart-medium">
+            <canvas id="chartAppsOverTime" style="width:100%;height:100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function(){
+  const dataUrl = "{% url 'employer_analytics_data' %}";
+
+  fetch(dataUrl)
+    .then(res => res.json())
+    .then(data => {
+      // Status doughnut
+      const statusCtx = document.getElementById('chartStatus').getContext('2d');
+      const statusData = data.status_counts || {};
+      const statusLabels = ['Pending','Reviewed','Accepted','Rejected'];
+      const statusValues = [statusData.pending||0, statusData.reviewed||0, statusData.accepted||0, statusData.rejected||0];
+
+      new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+          labels: statusLabels,
+          datasets: [{
+            data: statusValues,
+            backgroundColor: ['#f6c23e','#36a2eb','#1cc88a','#e74a3b']
+          }]
+        },
+        options: {responsive:true, maintainAspectRatio:false}
+      });
+
+      // Jobs by type (bar)
+      const jobsCtx = document.getElementById('chartJobsByType').getContext('2d');
+      const jobsByType = data.jobs_by_type || {};
+      const jobTypeLabels = Object.keys(jobsByType).map(k => k || 'Unknown');
+      const jobTypeValues = Object.keys(jobsByType).map(k => jobsByType[k]);
+
+      new Chart(jobsCtx, {
+        type: 'bar',
+        data: {
+          labels: jobTypeLabels,
+          datasets: [{
+            label: 'Jobs',
+            data: jobTypeValues,
+            backgroundColor: '#4e73df'
+          }]
+        },
+        options: {responsive:true, maintainAspectRatio:false, scales: {y: {beginAtZero:true}}}
+      });
+
+      // Conversion funnel
+      const funnelCtx = document.getElementById('chartFunnel').getContext('2d');
+      const funnel = data.funnel || {};
+      const funnelLabels = ['Applied','Reviewed','Accepted'];
+      const funnelValues = [funnel.total||0, funnel.reviewed||0, funnel.accepted||0];
+
+      new Chart(funnelCtx, {
+        type: 'bar',
+        data: {
+          labels: funnelLabels,
+          datasets: [{ data: funnelValues, backgroundColor: ['#36a2eb','#f6c23e','#1cc88a'] }]
+        },
+        options: {responsive:true, maintainAspectRatio:false, indexAxis: 'y', scales:{x: {beginAtZero:true}}}
+      });
+
+      // Top jobs by applications
+      const topJobsCtx = document.getElementById('chartTopJobs').getContext('2d');
+      const topJobs = data.top_jobs || [];
+      const topJobLabels = topJobs.map(j => j.title);
+      const topJobValues = topJobs.map(j => j.count);
+
+      new Chart(topJobsCtx, {
+        type: 'bar',
+        data: {
+          labels: topJobLabels,
+          datasets: [{ label: 'Applications', data: topJobValues, backgroundColor: '#4e73df' }]
+        },
+        options: {responsive:true, maintainAspectRatio:false, indexAxis: 'y', scales:{x:{beginAtZero:true}}}
+      });
+
+      // Applications by location (top 10)
+      const locCtx = document.getElementById('chartLocations').getContext('2d');
+      const locs = data.location_counts || [];
+      const locLabels = locs.map(l => l.location);
+      const locValues = locs.map(l => l.count);
+
+      new Chart(locCtx, {
+        type: 'bar',
+        data: {
+          labels: locLabels,
+          datasets: [{ label: 'Applications', data: locValues, backgroundColor: '#1cc88a' }]
+        },
+        options: {responsive:true, maintainAspectRatio:false, indexAxis: 'y', scales:{x:{beginAtZero:true}}}
+      });
+
+      // Applications over time (line)
+      const timeCtx = document.getElementById('chartAppsOverTime').getContext('2d');
+      const appsOver = data.applications_over_time || [];
+      const timeLabels = appsOver.map(x => x.date);
+      const timeValues = appsOver.map(x => x.count);
+
+      new Chart(timeCtx, {
+        type: 'line',
+        data: {
+          labels: timeLabels,
+          datasets: [{
+            label: 'Applications',
+            data: timeValues,
+            borderColor: '#36a2eb',
+            backgroundColor: 'rgba(54,162,235,0.1)',
+            fill: true,
+          }]
+        },
+        options: {responsive:true, maintainAspectRatio:false, scales: {y: {beginAtZero:true}}}
+      });
+
+    })
+    .catch(err => {
+      console.error('Failed to load analytics data', err);
+    });
+})();
+</script>
+{% endblock %}

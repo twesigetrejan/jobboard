@@ -229,3 +229,16 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
+
+/* Chart layout helpers */
+.chart-container {
+    position: relative;
+    width: 100%;
+}
+.chart-small { height: 260px; }
+.chart-medium { height: 320px; }
+
+@media (max-width: 768px) {
+    .chart-small { height: 200px; }
+    .chart-medium { height: 240px; }
+}
