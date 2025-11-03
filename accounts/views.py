@@ -29,12 +29,16 @@ def register(request):
             user = form.save()
             login(request, user)
             messages.success(request, f'Account created successfully! Welcome {user.username}')
-            # return redirect('login')
-            
             # Redirect to profile creation based on role
-        if user.userprofile.role == 'employer':
+            # user.userprofile is expected to be created by a signal; guard in case it's missing
+            try:
+                role = user.userprofile.role
+            except Exception:
+                role = None
+
+            if role == 'employer':
                 return redirect('create_employer_profile')
-        else:
+            else:
                 return redirect('create_job_seeker_profile')
     else:
         form = CustomUserCreationForm()
